@@ -2,10 +2,43 @@ import torch
 from torch import nn, Tensor
 import torch.nn.functional as F
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
+
 import math
 
+class ReverseLayer(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, x, alpha):
+        ctx.alpha = alpha
+        return x.view_as(x)
+    
+    @staticmethod
+    def backward(ctx, grad_output):
+        output = grad_output.neg() * ctx.alpha
+        return output, None
+        
+class Discriminator(nn.Module): #D_y
+    def __init__(self, in_features=24) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.li = nn.Sequential(
+            nn.Linear(in_features, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Linear(512, 1),
+            nn.Sigmoid()
+        )
 
-
+    def forward(self, x):
+        """
+        x: Tensor, shape [bts, in_features]
+        """
+        x = ReverseLayer.apply(x, 1)
+        if x.size(0) == 1:
+            pad = torch.zeros(1, self.in_features).cuda()
+            x = torch.cat((x, pad), 0)
+            y = self.li(x)[0].unsqueeze(0)
+            return y
+        return self.li(x)
 
 class transformer(nn.Module):
     def __init__(self, d_model=24, dropout=0.1, nhead=8, nlayers=2, max_len=500) -> None:
