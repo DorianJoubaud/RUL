@@ -360,11 +360,11 @@ if __name__ == "__main__":
     parser.add_argument('--dataset', type=str, default='FD001',help="decide source file", choices=['FD001','FD002','FD003','FD004'])
     args = parser.parse_args()
     print(f"Running with args: {args}")
-    # add wandb
+   
     
     exp_name = "s4rul + Attention"
     
-    #login to wandb
+    
 
     device = torch.device("cuda:"+args.gpu if torch.cuda.is_available() else "cpu")
     
@@ -399,7 +399,8 @@ if __name__ == "__main__":
     
     if args.train:
         if args.wandb:
-            wandb.login(key = '89972c25af0c49a4e2e1b8663778daedd960634a')
+            key = np.loadtxt("key.txt", dtype=str).tolist()
+            wandb.login(key = key)
 
             wandb.init(project="S4RUL", name=exp_name)
         print("="*20)
